@@ -11,11 +11,16 @@ The `web` folder hosts a small React based page that renders a candlestick chart
 - Dummy OHLCV data for two years so you can test different ranges.
 - Responsive behaviour and dynamic redraw when options change.
 
-Launch a small web server in the `web` folder so the local scripts load:
+Install the dependencies and start a small static server:
 
 ```bash
-cd web
-python3 -m http.server 8000
+npm install
+npm start
 ```
 
-Then browse to <http://localhost:8000>.
+This runs [http-server](https://www.npmjs.com/package/http-server) at <http://localhost:8000>. Open <http://localhost:8000/web/> in your browser to see the chart. On Windows open *Command Prompt* or *PowerShell*, navigate to the project folder and run the same commands.
+
+Because the site is completely static you can host it for free. Two options:
+
+1. **GitHub Pages** – create a repository, push this project and enable Pages in the repository settings. Point Pages to the root (or `web`) folder.
+2. **Netlify** – sign up for a free account and drag&drop the project folder or connect your Git repository. Set the publish directory to `web`.
