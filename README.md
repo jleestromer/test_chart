@@ -18,7 +18,7 @@ npm install
 npm start
 ```
 
-This runs [http-server](https://www.npmjs.com/package/http-server) at <http://localhost:8000>. Open <http://localhost:8000/web/> in your browser to see the chart. On Windows open *Command Prompt* or *PowerShell*, navigate to the project folder and run the same commands.
+This runs [http-server](https://www.npmjs.com/package/http-server) at <http://localhost:8000>. Open <http://localhost:8000> in your browser to see the chart. On Windows open *Command Prompt* or *PowerShell*, navigate to the project folder and run the same commands.
 
 Because the site is completely static you can host it for free. Two options:
 
