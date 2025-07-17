@@ -1,3 +1,4 @@
+// app.js
 const { useState, useEffect, useRef } = React;
 
 function generateData(points) {
@@ -10,7 +11,7 @@ function generateData(points) {
     const high = Math.max(open, close) + Math.random();
     const low = Math.min(open, close) - Math.random();
     const time = Date.UTC(2023, 0, i + 1);
-    data.push([time, open.toFixed(2) * 1, high.toFixed(2) * 1, low.toFixed(2) * 1, close.toFixed(2) * 1]);
+    data.push([time, +open.toFixed(2), +high.toFixed(2), +low.toFixed(2), +close.toFixed(2)]);
     volumes.push([time, Math.round(Math.random() * 1000 + 100)]);
     price = close;
   }
@@ -18,13 +19,14 @@ function generateData(points) {
 }
 
 const datasets = {
+  IBM: generateData(730),
   AAPL: generateData(730),
   GOOG: generateData(730)
 };
 
 function App() {
-  const [ticker, setTicker] = useState('AAPL');
-  const [smas, setSmas] = useState({10: false, 20: false, 50: false, 100: false});
+  const [ticker, setTicker] = useState('IBM');
+  const [smas, setSmas] = useState({10: false, 20: false, 50: true, 100: false});
   const [range, setRange] = useState('1Y');
   const [customStart, setCustomStart] = useState('');
   const [customEnd, setCustomEnd] = useState('');
@@ -33,28 +35,19 @@ function App() {
   const applyRange = () => {
     const chart = chartRef.current;
     if (!chart) return;
-    const data = chart.series[0] && chart.series[0].xData;
+    const data = chart.series[0]?.xData;
     if (!data || !data.length) return;
 
     let max = data[data.length - 1];
     let min = data[0];
     const day = 24 * 3600 * 1000;
     switch (range) {
-      case '1M':
-        min = max - 30 * day; break;
-      case '3M':
-        min = max - 90 * day; break;
-      case '6M':
-        min = max - 180 * day; break;
-      case 'YTD': {
-        const d = new Date(max);
-        min = Date.UTC(d.getUTCFullYear(), 0, 1);
-        break;
-      }
-      case '1Y':
-        min = max - 365 * day; break;
-      case 'All':
-        min = data[0]; break;
+      case '1M': min = max - 30 * day; break;
+      case '3M': min = max - 90 * day; break;
+      case '6M': min = max - 180 * day; break;
+      case 'YTD': min = Date.UTC(new Date(max).getUTCFullYear(), 0, 1); break;
+      case '1Y': min = max - 365 * day; break;
+      case 'All': min = data[0]; break;
       case 'Custom':
         if (customStart && customEnd) {
           min = Date.parse(customStart);
@@ -72,7 +65,8 @@ function App() {
         type: 'candlestick',
         id: 'ohlc',
         name: ticker,
-        data: data.ohlc
+        data: data.ohlc,
+        pointWidth: 5
       },
       {
         type: 'column',
@@ -82,6 +76,7 @@ function App() {
         yAxis: 1
       }
     ];
+
     Object.keys(smas).forEach(period => {
       if (smas[period]) {
         series.push({
@@ -93,20 +88,38 @@ function App() {
       }
     });
 
-    if (chartRef.current) {
-      chartRef.current.destroy();
-    }
+    if (chartRef.current) chartRef.current.destroy();
 
     chartRef.current = Highcharts.stockChart('chart', {
+      chart: { backgroundColor: '#fff' },
       rangeSelector: { selected: 4, inputDateFormat: '%Y-%m-%d' },
       title: { text: ticker + ' Stock Price' },
-      yAxis: [{ labels: { align: 'right', x: -3 }, title: { text: 'Price' }, height: '60%', resize: { enabled: true },
-        crosshair: {
-          color: 'red',
-          snap: false,
-          label: { enabled: true, format: '{value:.2f}', backgroundColor: '#fff', borderColor: 'red', style: { color: 'red' } }
+      yAxis: [
+        {
+          labels: { align: 'right', x: -3 },
+          title: { text: 'Price' },
+          height: '60%',
+          resize: { enabled: true },
+          crosshair: {
+            color: 'red',
+            snap: false,
+            label: {
+              enabled: true,
+              format: '{value:.2f}',
+              backgroundColor: '#fff',
+              borderColor: 'red',
+              style: { color: 'red' }
+            }
+          }
+        },
+        {
+          labels: { align: 'right', x: -3 },
+          title: { text: 'Volume' },
+          top: '65%',
+          height: '35%',
+          offset: 0
         }
-      }, { labels: { align: 'right', x: -3 }, title: { text: 'Volume' }, top: '65%', height: '35%', offset: 0 }],
+      ],
       tooltip: { split: false },
       series
     });
@@ -116,15 +129,23 @@ function App() {
   useEffect(() => { redraw(); }, [ticker, smas]);
   useEffect(() => { applyRange(); }, [range, customStart, customEnd]);
 
-  const handleSmaChange = (period) => {
-    setSmas(prev => ({ ...prev, [period]: !prev[period] }));
-  };
+  const handleSmaChange = (period) => setSmas(prev => ({ ...prev, [period]: !prev[period] }));
 
   return (
     React.createElement('div', null,
+      React.createElement('div', { className: 'chart-header' },
+        React.createElement('div', { className: 'ticker-symbol' }, ticker),
+        React.createElement('div', { className: 'price-info' },
+          React.createElement('span', { className: 'price' }, '280.60'),
+          React.createElement('span', { className: 'price-change' }, '(-0.74%)'),
+          React.createElement('span', { className: 'ohlc' }, 'O 282.75 H 283.87 L 280.51 C 280.60'),
+          React.createElement('span', { className: 'volume' }, 'Vol 528.5K')
+        )
+      ),
       React.createElement('div', { className: 'controls' },
         React.createElement('label', null, 'Ticker:',
-          React.createElement('input', { value: ticker, onChange: e => setTicker(e.target.value.toUpperCase()), list: 'tickers' })),
+          React.createElement('input', { value: ticker, onChange: e => setTicker(e.target.value.toUpperCase()), list: 'tickers' })
+        ),
         React.createElement('datalist', { id: 'tickers' },
           Object.keys(datasets).map(key => React.createElement('option', { key }, key))
         ),
@@ -151,6 +172,13 @@ function App() {
             )
           ))
         )
+      ),
+      React.createElement('div', { className: 'sma-legend' },
+        Object.entries(smas).map(([period, enabled]) => enabled && (
+          React.createElement('div', { key: period, className: `legend-item sma-${period}` },
+            React.createElement('span', { className: 'color-box' }), ` SMA(${period})`
+          )
+        ))
       ),
       React.createElement('div', { id: 'chart' })
     )
