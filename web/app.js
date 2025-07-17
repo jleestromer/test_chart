@@ -35,6 +35,7 @@ function App() {
     if (!chart) return;
     const data = chart.series[0] && chart.series[0].xData;
     if (!data || !data.length) return;
+
     let max = data[data.length - 1];
     let min = data[0];
     const day = 24 * 3600 * 1000;
