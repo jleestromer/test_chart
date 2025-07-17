@@ -18,14 +18,51 @@ function generateData(points) {
 }
 
 const datasets = {
-  AAPL: generateData(365),
-  GOOG: generateData(365)
+  AAPL: generateData(730),
+  GOOG: generateData(730)
 };
 
 function App() {
   const [ticker, setTicker] = useState('AAPL');
   const [smas, setSmas] = useState({10: false, 20: false, 50: false, 100: false});
+  const [range, setRange] = useState('1Y');
+  const [customStart, setCustomStart] = useState('');
+  const [customEnd, setCustomEnd] = useState('');
   const chartRef = useRef(null);
+
+  const applyRange = () => {
+    const chart = chartRef.current;
+    if (!chart) return;
+    const data = chart.series[0] && chart.series[0].xData;
+    if (!data || !data.length) return;
+    let max = data[data.length - 1];
+    let min = data[0];
+    const day = 24 * 3600 * 1000;
+    switch (range) {
+      case '1M':
+        min = max - 30 * day; break;
+      case '3M':
+        min = max - 90 * day; break;
+      case '6M':
+        min = max - 180 * day; break;
+      case 'YTD': {
+        const d = new Date(max);
+        min = Date.UTC(d.getUTCFullYear(), 0, 1);
+        break;
+      }
+      case '1Y':
+        min = max - 365 * day; break;
+      case 'All':
+        min = data[0]; break;
+      case 'Custom':
+        if (customStart && customEnd) {
+          min = Date.parse(customStart);
+          max = Date.parse(customEnd);
+        }
+        break;
+    }
+    chart.xAxis[0].setExtremes(min, max);
+  };
 
   const redraw = () => {
     const data = datasets[ticker];
@@ -60,15 +97,23 @@ function App() {
     }
 
     chartRef.current = Highcharts.stockChart('chart', {
-      rangeSelector: { selected: 5 },
+      rangeSelector: { selected: 4, inputDateFormat: '%Y-%m-%d' },
       title: { text: ticker + ' Stock Price' },
-      yAxis: [{ labels: { align: 'right', x: -3 }, title: { text: 'Price' }, height: '60%', resize: { enabled: true } }, { labels: { align: 'right', x: -3 }, title: { text: 'Volume' }, top: '65%', height: '35%', offset: 0 }],
+      yAxis: [{ labels: { align: 'right', x: -3 }, title: { text: 'Price' }, height: '60%', resize: { enabled: true },
+        crosshair: {
+          color: 'red',
+          snap: false,
+          label: { enabled: true, format: '{value:.2f}', backgroundColor: '#fff', borderColor: 'red', style: { color: 'red' } }
+        }
+      }, { labels: { align: 'right', x: -3 }, title: { text: 'Volume' }, top: '65%', height: '35%', offset: 0 }],
       tooltip: { split: false },
       series
     });
+    applyRange();
   };
 
   useEffect(() => { redraw(); }, [ticker, smas]);
+  useEffect(() => { applyRange(); }, [range, customStart, customEnd]);
 
   const handleSmaChange = (period) => {
     setSmas(prev => ({ ...prev, [period]: !prev[period] }));
@@ -81,6 +126,17 @@ function App() {
           React.createElement('input', { value: ticker, onChange: e => setTicker(e.target.value.toUpperCase()), list: 'tickers' })),
         React.createElement('datalist', { id: 'tickers' },
           Object.keys(datasets).map(key => React.createElement('option', { key }, key))
+        ),
+        React.createElement('label', null, ' Range:',
+          React.createElement('select', { value: range, onChange: e => setRange(e.target.value) },
+            ['1M','3M','6M','YTD','1Y','All','Custom'].map(r =>
+              React.createElement('option', { key: r, value: r }, r)
+            )
+          )
+        ),
+        range === 'Custom' && React.createElement(React.Fragment, null,
+          React.createElement('input', { type: 'date', value: customStart, onChange: e => setCustomStart(e.target.value) }),
+          React.createElement('input', { type: 'date', value: customEnd, onChange: e => setCustomEnd(e.target.value) })
         ),
         React.createElement('div', { className: 'sma-list' },
           Object.keys(smas).map(period => (
