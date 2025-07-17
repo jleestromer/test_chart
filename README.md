@@ -11,4 +11,11 @@ The `web` folder hosts a small React based page that renders a candlestick chart
 - Dummy OHLCV data for two years so you can test different ranges.
 - Responsive behaviour and dynamic redraw when options change.
 
-Open `web/index.html` in a browser to try the demo.
+Launch a small web server in the `web` folder so the local scripts load:
+
+```bash
+cd web
+python3 -m http.server 8000
+```
+
+Then browse to <http://localhost:8000>.
