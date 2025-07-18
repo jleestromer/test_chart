@@ -1,6 +1,13 @@
 // app.js
 const { useState, useEffect, useRef } = React;
 
+const smaColors = {
+  10: '#f39c12',
+  20: '#e67e22',
+  50: '#2980b9',
+  100: '#8e44ad'
+};
+
 function generateData(points) {
   const data = [];
   const volumes = [];
@@ -58,35 +65,9 @@ function App() {
     chart.xAxis[0].setExtremes(min, max);
   };
 
-  const redraw = () => {
+  const initChart = () => {
+    if (!datasets[ticker]) datasets[ticker] = generateData(730);
     const data = datasets[ticker];
-    const series = [
-      {
-        type: 'candlestick',
-        id: 'ohlc',
-        name: ticker,
-        data: data.ohlc,
-        pointWidth: 5
-      },
-      {
-        type: 'column',
-        id: 'volume',
-        name: 'Volume',
-        data: data.volume,
-        yAxis: 1
-      }
-    ];
-
-    Object.keys(smas).forEach(period => {
-      if (smas[period]) {
-        series.push({
-          type: 'sma',
-          linkedTo: 'ohlc',
-          name: `SMA ${period}`,
-          params: { period: Number(period) }
-        });
-      }
-    });
 
     if (chartRef.current) chartRef.current.destroy();
 
@@ -98,7 +79,7 @@ function App() {
         {
           labels: { align: 'right', x: -3 },
           title: { text: 'Price' },
-          height: '60%',
+          height: '100%',
           resize: { enabled: true },
           crosshair: {
             color: 'red',
@@ -113,20 +94,63 @@ function App() {
           }
         },
         {
-          labels: { align: 'right', x: -3 },
-          title: { text: 'Volume' },
-          top: '65%',
-          height: '35%',
+          visible: false,
+          top: 0,
+          height: '100%',
           offset: 0
         }
       ],
       tooltip: { split: false },
-      series
+      series: [
+        {
+          type: 'candlestick',
+          id: 'ohlc',
+          name: ticker,
+          data: data.ohlc,
+          pointWidth: 5,
+          zIndex: 2
+        },
+        {
+          type: 'column',
+          id: 'volume',
+          name: 'Volume',
+          data: data.volume,
+          yAxis: 1,
+          opacity: 0.3,
+          zIndex: 0
+        }
+      ]
     });
     applyRange();
   };
 
-  useEffect(() => { redraw(); }, [ticker, smas]);
+  const updateSmas = () => {
+    const chart = chartRef.current;
+    if (!chart) return;
+    Object.keys(smas).forEach(period => {
+      const id = `sma-${period}`;
+      const existing = chart.get(id);
+      if (smas[period]) {
+        if (!existing) {
+          chart.addSeries({
+            id,
+            type: 'sma',
+            linkedTo: 'ohlc',
+            name: `SMA ${period}`,
+            params: { period: Number(period) },
+            color: smaColors[period],
+            marker: { enabled: false }
+          }, false);
+        }
+      } else if (existing) {
+        existing.remove(false);
+      }
+    });
+    chart.redraw();
+  };
+
+  useEffect(() => { initChart(); }, [ticker]);
+  useEffect(() => { updateSmas(); }, [smas]);
   useEffect(() => { applyRange(); }, [range, customStart, customEnd]);
 
   const handleSmaChange = (period) => setSmas(prev => ({ ...prev, [period]: !prev[period] }));
@@ -176,7 +200,7 @@ function App() {
       React.createElement('div', { className: 'sma-legend' },
         Object.entries(smas).map(([period, enabled]) => enabled && (
           React.createElement('div', { key: period, className: `legend-item sma-${period}` },
-            React.createElement('span', { className: 'color-box' }), ` SMA(${period})`
+            React.createElement('span', { className: 'color-box', style: { background: smaColors[period] } }), ` SMA(${period})`
           )
         ))
       ),
