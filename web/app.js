@@ -75,6 +75,12 @@ function App() {
       chart: { backgroundColor: '#fff' },
       rangeSelector: { selected: 4, inputDateFormat: '%Y-%m-%d' },
       title: { text: ticker + ' Stock Price' },
+      plotOptions: {
+        series: {
+          marker: { enabled: false },
+          states: { hover: { enabled: false } }
+        }
+      },
       yAxis: [
         {
           labels: { align: 'right', x: -3 },
@@ -127,6 +133,7 @@ function App() {
   const updateSmas = () => {
     const chart = chartRef.current;
     if (!chart) return;
+    let changed = false;
     Object.keys(smas).forEach(period => {
       const id = `sma-${period}`;
       const existing = chart.get(id);
@@ -141,12 +148,14 @@ function App() {
             color: smaColors[period],
             marker: { enabled: false }
           }, false);
+          changed = true;
         }
       } else if (existing) {
         existing.remove(false);
+        changed = true;
       }
     });
-    chart.redraw();
+    if (changed) chart.redraw();
   };
 
   useEffect(() => { initChart(); }, [ticker]);
