@@ -37,6 +37,7 @@ function App() {
   const [range, setRange] = useState('1Y');
   const [customStart, setCustomStart] = useState('');
   const [customEnd, setCustomEnd] = useState('');
+  const [showSmaPicker, setShowSmaPicker] = useState(false);
   const chartRef = useRef(null);
 
   const applyRange = () => {
@@ -69,7 +70,9 @@ function App() {
     if (!datasets[ticker]) datasets[ticker] = generateData(730);
     const data = datasets[ticker];
 
-    if (chartRef.current) chartRef.current.destroy();
+    const prevChart = chartRef.current;
+    const prevExt = prevChart ? prevChart.xAxis[0].getExtremes() : null;
+    if (prevChart) prevChart.destroy();
 
     chartRef.current = Highcharts.stockChart('chart', {
       chart: { backgroundColor: '#fff' },
@@ -127,12 +130,17 @@ function App() {
         }
       ]
     });
-    applyRange();
+    if (prevExt) {
+      chartRef.current.xAxis[0].setExtremes(prevExt.min, prevExt.max, false);
+    } else {
+      applyRange();
+    }
   };
 
   const updateSmas = () => {
     const chart = chartRef.current;
     if (!chart) return;
+    const ext = chart.xAxis[0].getExtremes();
     let changed = false;
     Object.keys(smas).forEach(period => {
       const id = `sma-${period}`;
@@ -155,7 +163,10 @@ function App() {
         changed = true;
       }
     });
-    if (changed) chart.redraw();
+    if (changed) {
+      chart.redraw(false);
+      chart.xAxis[0].setExtremes(ext.min, ext.max, false);
+    }
   };
 
   useEffect(() => { initChart(); }, [ticker]);
@@ -177,7 +188,7 @@ function App() {
       ),
       React.createElement('div', { className: 'controls' },
         React.createElement('label', null, 'Ticker:',
-          React.createElement('input', { value: ticker, onChange: e => setTicker(e.target.value.toUpperCase()), list: 'tickers' })
+          React.createElement('input', { value: ticker, onChange: e => setTicker(e.target.value.toUpperCase().trim()), list: 'tickers' })
         ),
         React.createElement('datalist', { id: 'tickers' },
           Object.keys(datasets).map(key => React.createElement('option', { key }, key))
@@ -193,18 +204,7 @@ function App() {
           React.createElement('input', { type: 'date', value: customStart, onChange: e => setCustomStart(e.target.value) }),
           React.createElement('input', { type: 'date', value: customEnd, onChange: e => setCustomEnd(e.target.value) })
         ),
-        React.createElement('div', { className: 'sma-list' },
-          Object.keys(smas).map(period => (
-            React.createElement('label', { key: period },
-              React.createElement('input', {
-                type: 'checkbox',
-                checked: smas[period],
-                onChange: () => handleSmaChange(period)
-              }),
-              ` SMA ${period}`
-            )
-          ))
-        )
+        React.createElement('button', { onClick: () => setShowSmaPicker(true) }, 'Indicators')
       ),
       React.createElement('div', { className: 'sma-legend' },
         Object.entries(smas).map(([period, enabled]) => enabled && (
@@ -213,6 +213,22 @@ function App() {
           )
         ))
       ),
+      showSmaPicker &&
+        React.createElement('div', { className: 'sma-popup', onClick: () => setShowSmaPicker(false) },
+          React.createElement('div', { className: 'popup-content', onClick: e => e.stopPropagation() },
+            Object.keys(smas).map(period => (
+              React.createElement('label', { key: period },
+                React.createElement('input', {
+                  type: 'checkbox',
+                  checked: smas[period],
+                  onChange: () => handleSmaChange(period)
+                }),
+                ` SMA ${period}`
+              )
+            )),
+            React.createElement('button', { onClick: () => setShowSmaPicker(false) }, 'Close')
+          )
+        ),
       React.createElement('div', { id: 'chart' })
     )
   );
