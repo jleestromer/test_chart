@@ -24,14 +24,17 @@
       position: relative;
       display: flex;
       flex-direction: column;
-      height: 95vh;
-      width: 95vw;
+      height: 100vh;
+      width: 100vw;
+      padding: 10px;
+      box-sizing: border-box;
     }
     #chart {
       flex: 1;
       background: white;
       border-radius: 8px;
       box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+      overflow: hidden;
     }
 .controls {
   margin-bottom: 10px;
@@ -49,9 +52,6 @@
 }
 .chart-header .price-info span {
   margin-left: 12px;
-}
-.sma-list label {
-  margin-right: 10px;
 }
 .sma-legend {
   position: absolute;
@@ -79,6 +79,28 @@
 .sma-20 .color-box { background: #e67e22; }
 .sma-50 .color-box { background: #2980b9; }
 .sma-100 .color-box { background: #8e44ad; }
+
+    .sma-popup {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(0,0,0,0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 20;
+    }
+    .popup-content {
+      background: #fff;
+      padding: 20px;
+      border-radius: 6px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
 
   </style>
 </head>

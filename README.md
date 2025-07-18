@@ -5,7 +5,7 @@ This repository contains a simple demo implementing the requirements from the te
 The `web` folder hosts a small React based page that renders a candlestick chart using **Highcharts**. Features:
 
 - Ticker input with two dummy symbols (`AAPL` and `GOOG`).
-- Toggle four predefined SMA lines (10, 20, 50 and 100).
+- Toggle four predefined SMA lines (10, 20, 50 and 100) using the **Indicators** popup.
 - Built in range selector (1M, 3M, 6M, YTD, 1Y, All or custom dates).
 - Crosshair that shows the price under the cursor in red.
 - Dummy OHLCV data for two years so you can test different ranges.
